@@ -1,0 +1,148 @@
+#!/bin/bash
+
+# NAME: Linnea P. Castro
+# COURSE: CSE 224
+# DATE: 31 OCT 2022
+# ASSIGNMENT: PA3
+# SYNOPSIS:
+
+# This bash script creates a stick picking game. The user has the option to customize the starting number of sticks as a 
+# command line argument, as long as their entry is >= 5 sticks.  If the command line is left empty, the script will
+# prompt the user to enter a number of sticks and use that number for gameplay, provided it is >= 5 sticks. This script
+# utilizes two functions, the first being a stick printing function.  The stick printing function takes the value
+# stored in the stick variable and prints that many "|" pipe sticks. This goal is achieved using a while loop and the
+# variable i, initialized to 0 and set to increment through each loop iteration as long as i is less than $sticks,
+# effectively creating one "|" stick for each stick remaining in play.  This function is called after each turn, following
+# stick calculation (subtracting pick from number of sticks remaining).
+
+# The second function, called "stick picking function" is used by the computer to select number of sticks to draw.  It
+# is only called at the beginning of the computer's turn.  It uses the algorithm sticks%5 to select number of sticks to
+# draw.  If there is no remainder, the computer will draw 1 stick, otherwise, it will draw the remainder.  This effect
+# is achieved with an if/else conditional.
+
+# After establishing the number of sticks to play with, the gameplay loop begins with an infinite while loop.  The computer
+# takes its turn first.  The computer's turn consists of calling the stick picking function, calculating remaining sticks, 
+# printing remaining sticks with the stick printing function, and then checking for a win (were the last sticks drawn 
+# on this turn?).  After determining there are still sticks in play, the user takes their turn.  The user is prompted to 
+# choose a number of sticks to remove (1,2,3, or 4).  An infinite loop ensures the user will keep being asked for a 
+# legitimate stick choice if their input is not 1-4. A legitimate entry is the ticket out of the loop, as flag changes to 0.
+# The user's turn also concludes with calculating remaining sticks, calling the stick printing function, and checking for a win.  
+# A win will exit the game.  Remaining sticks will loop back up to the top of the gameplay loop for the computer's turn,
+# and continue to loop until the last sticks are drawn, wherein a winner will be declared and the game will exit. 
+
+#
+# STICK PRINTING FUNCTION
+#
+function printsticks
+{
+i=0 # variable i for incrementing sticks/printing 1 at a time
+
+while [[ $i -lt $sticks ]] # As long as i is less than num of sticks
+do
+  echo -n "|" # Print just one stick, no newline
+  i=$((i+1))  # Now increment i, keep looping
+done
+
+echo "($sticks)" # Now that we're out of the loop, print stick num in parenthesis
+}
+
+#
+# STICK PICKING FUNCTION
+#
+function pick
+{
+remainder=$((sticks%5))
+
+if [[ $remainder -eq 0 ]]
+then
+  pick=1
+else 
+  pick=$remainder
+fi
+}
+
+#
+# START OF MAIN PROGRAM
+#
+startingsticks=$1 #starting sticks in command line
+
+if [[ "$1" == "" ]] # First checking if command line is empty, if yes:
+then
+  echo -n  "How many sticks would you like to play with? " # Ask how many sticks to play with
+  read startingsticks # Read what user types into variable startingsticks
+  startingsticks=$startingsticks
+fi
+
+if [[ $startingsticks -ge 0 ]] && [[ $startingsticks -lt 5 ]] # Whether obtained above or through command line, check for too few sticks
+then
+  echo "We need at least 5 sticks to start playing!" # Too few sticks entered, exit program
+  exit
+fi
+
+if [[ $startingsticks -ge 5 ]] # If startingsticks >= 5, we're good to start playing
+then
+  startingsticks=$startingsticks # Assign confirmed value back to startingsticks
+fi
+
+echo -n "Perfect, we'll start with $startingsticks sticks." # startingsticks established, game play begins
+
+sticks=$startingsticks # Assign value of startingsticks to variable sticks
+
+printsticks $sticks # Call printSticks function
+
+echo "I'll go first." # Computer takes first turn
+
+#
+# GAMEPLAY LOOP BEGINS
+#
+gameplay=1
+while [[ $gameplay -eq 1 ]] # Starting infinite while loop to enter gameplay/turn taking
+do
+
+#
+# COMPUTER TURN
+#
+pick $sticks # Call pick function w current value of sticks
+sticks=$((sticks-pick)) # Calculate how many sticks are left
+echo "I'm removing $pick sticks. There are `printsticks $sticks` sticks left." # Echoing how many sticks were drawn and calling printsticks function
+if [[ $sticks -le 0 ]] # Check to see if last sticks were drawn
+then
+  echo "Wahoo, I drew the last sticks and won.  Play again?" # Last sticks were drawn, computer wins!
+  exit
+fi 
+
+#
+# USER TURN
+#
+echo -n "How many sticks do you want to remove? " # Last sticks were not drawn, gameplay continues, user turn
+read userpick
+userpick=$userpick
+
+waitingforuser=1 # Flag for checking user input
+while [[ $waitingforuser -eq 1 ]] # Entering loop to check for legit user input
+do
+if [[ $userpick -ge 1 ]] && [[ $userpick -le 4 ]] # User input is legit, change waitingforuser flag to 0 to exit loop
+then
+  userpick=$userpick # Keeping user entry as userpick
+  waitingforuser=0 # Changing flag so we'll exit this loop and continue gameplay
+else
+  echo "You can remove only 1, 2, 3, or 4 sticks.  Pick a number in this range." # Alerts user of improper input
+  echo -n "How many sticks do you want to remove? " # Asks them again...
+  read userpick
+  userpick=$userpick # And goes back to the top of this loop to check for legit input
+fi
+done
+
+sticks=$((sticks-userpick)) # Calculate how many sticks left after user's pick
+echo -n "You removed $userpick sticks. " # How many sticks did user remove, checks have been cleared
+if [[ $sticks -le 0 ]] # If they drew the last sticks, they won
+then
+  echo "There are `printsticks $sticks` sticks left." # No sticks left as determined in if statement above
+  echo "You won by drawing the last bunch of sticks, congrats!" # User wins, game will exit
+  exit
+else
+  echo "There are `printsticks $sticks` sticks left." # If they didn't draw the last sticks, call printsticks function, gameplay loop continues
+fi
+
+done
+
